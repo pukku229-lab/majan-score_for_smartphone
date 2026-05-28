@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>麻雀スコアマネージャー</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --panel-bg: #ffffff;
+            --primary-color: #0284c7;
+            --primary-light: #f0f9ff;
+            --border-color: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --danger-color: #ef4444;
+            --danger-bg: #fee2e2;
+            --success-color: #22c55e;
+            --edit-color: #f97316;
+            --edit-bg: #ffedd5;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --primary-color: #38bdf8;
+            --primary-light: #0f172a;
+            --border-color: #334155;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger-color: #f87171;
+            --danger-bg: #451a03;
+            --success-color: #4ade80;
+            --edit-color: #fb923c;
+            --edit-bg: #431407;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 16px;
+        }
+
+        h1 { font-size: 1.2rem; color: var(--primary-color); }
+
+        .header-controls { display: flex; align-items: center; gap: 8px; }
+
+        input, select, button {
+            font-size: 16px; /* iOSのズーム防止 */
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+        }
+
+        input[type="text"], select {
+            padding: 8px;
+            width: 100%;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            cursor: pointer;
+        }
+        [data-theme="dark"] button { color: #0f172a; }
+
+        button.secondary { background-color: #64748b; color: white; }
+        button.danger { background-color: var(--danger-color); color: white; }
+        [data-theme="dark"] button.secondary, 
+        [data-theme="dark"] button.danger { color: white; }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* スマホ向けダイヤモンドレイアウト */
+        .grid-diamond {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .slot-east   { grid-column: 2; grid-row: 1; } 
+        .slot-south  { grid-column: 1; grid-row: 2; } 
+        .slot-center { grid-column: 2; grid-row: 2; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; opacity: 0.3; } 
+        .slot-north  { grid-column: 3; grid-row: 2; } 
+        .slot-west   { grid-column: 2; grid-row: 3; } 
+
+        .player-slot {
+            background: var(--primary-light);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .player-slot-header {
+            font-size: 0.75rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .player-slot select {
+            padding: 4px;
+            font-size: 0.85rem;
+        }
+
+        .player-slot input.player-score {
+            text-align: right;
+            padding: 6px;
+            font-size: 1rem;
+            background-color: var(--panel-bg);
+        }
+        
+        .player-slot input.player-score:focus {
+            outline: 2px solid var(--primary-color);
+            background-color: var(--panel-bg);
+        }
+
+        .sum-check { font-size: 1rem; }
+        .text-success { color: var(--success-color) !important; }
+        .text-danger { color: var(--danger-color) !important; }
+
+        /* スコアテーブル */
+        .score-table { width: 100%; border-collapse: collapse; }
+        .score-table th, .score-table td {
+            padding: 10px 6px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+        .score-table th { background-color: var(--primary-light); text-align: left; }
+        .score-table td.num { text-align: right; font-size: 1.05rem; }
+        .table-actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .table-actions button { padding: 4px 8px; font-size: 0.8rem; }
+
+        /* 履歴リスト */
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+        .history-item {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 8px;
+            background-color: var(--bg-color);
+        }
+        .history-header {
+            display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;
+        }
+        .history-scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-size: 0.9rem; text-align: center; }
+
+        /* モーダル */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+        }
+        .modal-content { background-color: var(--panel-bg); padding: 16px; border-radius: 12px; width: 100%; max-width: 360px; border: 2px solid var(--primary-color); }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>麻雀スコア管理</h1>
+    <div class="header-controls">
+        <button onclick="toggleTheme()" style="padding: 6px 10px; font-size: 1rem; background: none; border: 1px solid var(--border-color);" id="theme-toggle">☀️</button>
+    </div>
+</header>
+
+<!-- メイン入力卓 -->
+<div class="panel">
+    <div class="panel-title">
+        <span>対局スコア入力</span>
+        <span class="sum-check" id="table-status">合計: 0</span>
+    </div>
+    <div class="grid-diamond">
+        <div class="player-slot slot-east">
+            <div class="player-slot-header">東家</div>
+            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <!-- inputmode="decimal" でスマホの数字キーボード（点・マイナス付き）を呼び出す -->
+            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+        </div>
+        <div class="player-slot slot-south">
+            <div class="player-slot-header">南家</div>
+            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+        </div>
+        <div class="slot-center">🀄</div>
+        <div class="player-slot slot-north">
+            <div class="player-slot-header">北家</div>
+            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+        </div>
+        <div class="player-slot slot-west">
+            <div class="player-slot-header">西家</div>
+            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+        </div>
+    </div>
+    <button onclick="submitScores()" style="width: 100%; padding: 12px;">このスコアを登録</button>
+</div>
+
+<!-- スコア履歴パネル -->
+<div class="panel">
+    <div class="panel-title">対局スコア履歴</div>
+    <div class="history-list" id="history-container"></div>
+</div>
+
+<!-- 名簿管理 & 通算成績パネル -->
+<div class="panel">
+    <div class="panel-title" style="margin-bottom: 12px;">個人通算スコア（名簿）</div>
+    
+    <div style="display: flex; gap: 8px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed var(--border-color);">
+        <input type="text" id="new-player-name" placeholder="新しい参加者の名前">
+        <button onclick="addPlayer()" style="flex-shrink: 0;">新規登録</button>
+    </div>
+
+    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+        <button id="sort-name-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setSortOrder('name')">名前順</button>
+        <button id="sort-score-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setSortOrder('score')">スコア順</button>
+        <button class="secondary" style="padding: 4px 8px; font-size: 0.8rem; margin-left: auto;" onclick="resetAllScores()">全リセット</button>
+    </div>
+    <table class="score-table">
+        <tbody id="score-table-body"></tbody>
+    </table>
+</div>
+
+<!-- 履歴修正モーダル -->
+<div class="modal" id="edit-modal">
+    <div class="modal-content">
+        <div class="panel-title"><span>履歴スコアの修正</span></div>
+        <div id="modal-inputs-container"></div>
+        <div style="margin-top: 12px; font-size: 1rem; text-align: right;" id="modal-sum-check">合計: 0</div>
+        <div class="modal-buttons">
+            <button class="danger" id="modal-delete-btn">削除</button>
+            <button class="secondary" onclick="closeModal()">戻る</button>
+            <button onclick="saveEditedHistory()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let players = JSON.parse(localStorage.getItem('mj_players')) || {};
+    let history = JSON.parse(localStorage.getItem('mj_history')) || [];
+    let currentTheme = localStorage.getItem('mj_theme') || 'light';
+    let currentSort = 'score';
+    let editingHistoryId = null;
+
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.getElementById('theme-toggle').textContent = currentTheme === 'light' ? '☀️' : '🌙';
+
+    function saveData() {
+        localStorage.setItem('mj_players', JSON.stringify(players));
+        localStorage.setItem('mj_history', JSON.stringify(history));
+        localStorage.setItem('mj_theme', currentTheme);
+    }
+
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        document.getElementById('theme-toggle').textContent = currentTheme === 'light' ? '☀️' : '🌙';
+        saveData();
+    }
+
+    function setSortOrder(order) {
+        currentSort = order;
+        updateUI();
+    }
+
+    function recalculateTotalScores() {
+        Object.keys(players).forEach(name => { players[name] = 0; });
+        history.forEach(record => {
+            record.match.forEach(p => {
+                if (players[p.name] !== undefined) players[p.name] += p.score;
+            });
+        });
+        saveData();
+    }
+
+    function updateUI() {
+        const tbody = document.getElementById('score-table-body');
+        tbody.innerHTML = '';
+        let sortedEntries = Object.entries(players);
+        if (currentSort === 'score') sortedEntries.sort((a, b) => b[1] - a[1]);
+        else sortedEntries.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+
+        sortedEntries.forEach(([name, score]) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${name}</td><td class="num ${score > 0 ? 'text-success' : (score < 0 ? 'text-danger' : '')}">${score > 0 ? '+' + score.toFixed(1) : score.toFixed(1)}</td><td class="table-actions"><button class="secondary" style="background:#e2e8f0; color:#475569;" onclick="renamePlayer('${name}')">名</button><button class="danger" onclick="removePlayer('${name}')">削</button></td>`;
+            tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.player-select').forEach(select => {
+            const current = select.value;
+            select.innerHTML = '<option value="">選択</option>' + Object.keys(players).sort((a,b)=>a.localeCompare(b,'ja')).map(n=>`<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
+        });
+
+        const historyContainer = document.getElementById('history-container');
+        historyContainer.innerHTML = history.length === 0 ? '<div style="text-align:center; padding:10px; font-size:0.9rem; color:var(--text-muted);">履歴がありません</div>' : 
+            history.slice().reverse().map(record => `
+                <div class="history-item">
+                    <div class="history-header"><span>${new Date(record.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}の対局</span><span style="color:var(--primary-color); cursor:pointer; text-decoration:underline;" onclick="openEditModal(${record.id})">[修正]</span></div>
+                    <div class="history-scores">${record.match.map(p => `<div><div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div><div class="${p.score > 0 ? 'text-success' : (p.score < 0 ? 'text-danger' : '')}">${p.score > 0 ? '+' + p.score.toFixed(1) : p.score.toFixed(1)}</div></div>`).join('')}</div>
+                </div>`).join('');
+    }
+
+    function addPlayer() {
+        const input = document.getElementById('new-player-name');
+        const name = input.value.trim();
+        if (name && players[name] === undefined) {
+            players[name] = 0; input.value = ''; saveData(); updateUI();
+        }
+    }
+
+    function renamePlayer(oldName) {
+        const newName = prompt('「' + oldName + '」さんの新しい名前を入力:', oldName);
+        if (newName && newName.trim() !== oldName && players[newName.trim()] === undefined) {
+            players[newName.trim()] = players[oldName]; delete players[oldName];
+            history.forEach(r => r.match.forEach(p => { if (p.name === oldName) p.name = newName.trim(); }));
+            saveData(); updateUI();
+        }
+    }
+
+    function removePlayer(name) {
+        if (confirm(name + ' さんを削除しますか？')) {
+            delete players[name]; recalculateTotalScores(); updateUI();
+        }
+    }
+
+    // スマホの標準キーボードで変な文字が入らないようにガード
+    function cleanInput(el) {
+        let val = el.value.replace(/[^0-9.-]/g, '');
+        if (val.lastIndexOf('-') > 0) {
+            val = val.replace(/-/g, '');
+        }
+        const idx = val.indexOf('.');
+        if (idx !== -1) {
+            val = val.substring(0, idx + 1) + val.substring(idx + 1).replace(/\./g, '');
+        }
+        el.value = val;
+    }
+
+    function validateSum() {
+        let sum = 0;
+        document.querySelectorAll('.player-score').forEach(i => {
+            let v = parseFloat(i.value);
+            if (!isNaN(v)) sum += v;
+        });
+        sum = Math.round(sum * 10) / 10;
+        
+        const status = document.getElementById('table-status');
+        status.textContent = '合計: ' + (sum > 0 ? '+' + sum : sum);
+        status.className = 'sum-check ' + (sum === 0 ? 'text-success' : 'text-danger');
+    }
+
+    function submitScores() {
+        let currentMatch = [], sum = 0, hasError = false;
+        document.querySelectorAll('.player-slot').forEach(slot => {
+            const name = slot.querySelector('.player-select').value;
+            const score = parseFloat(slot.querySelector('.player-score').value);
+            if (!name || isNaN(score)) hasError = true;
+            currentMatch.push({ name, score }); sum += score || 0;
+        });
+        if (hasError || Math.round(sum * 10) / 10 !== 0) { alert('入力不備があるか、合計が0ではありません'); return; }
+        
+        history.push({ id: Date.now(), match: currentMatch });
+        document.querySelectorAll('.player-score').forEach(i => i.value = '');
+        recalculateTotalScores(); updateUI(); validateSum();
+    }
+
+    function openEditModal(recordId) {
+        editingHistoryId = recordId;
+        const record = history.find(r => r.id === recordId);
+        const container = document.getElementById('modal-inputs-container');
+        container.innerHTML = record.match.map(p => `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</span>
+                <input type="number" step="0.1" class="modal-score-input" data-name="${p.name}" value="${p.score}" style="width:120px; padding:6px; text-align:right;" oninput="validateModalSum()">
+            </div>`).join('');
+        document.getElementById('modal-delete-btn').onclick = () => { if(confirm('この履歴を削除しますか？')){history = history.filter(r => r.id !== recordId); recalculateTotalScores(); updateUI(); closeModal();}};
+        document.getElementById('edit-modal').style.display = 'flex'; validateModalSum();
+    }
+
+    function closeModal() { document.getElementById('edit-modal').style.display = 'none'; editingHistoryId = null; }
+
+    function validateModalSum() {
+        let sum = 0; document.querySelectorAll('.modal-score-input').forEach(i => sum += parseFloat(i.value) || 0);
+        sum = Math.round(sum * 10) / 10;
+        const checkDiv = document.getElementById('modal-sum-check');
+        checkDiv.textContent = '合計: ' + (sum > 0 ? '+' + sum : sum);
+        checkDiv.className = sum === 0 ? 'text-success' : 'text-danger';
+        return sum === 0;
+    }
+
+    function saveEditedHistory() {
+        if (!validateModalSum()) { alert('合計を0にしてください'); return; }
+        const record = history.find(r => r.id === editingHistoryId);
+        record.match = Array.from(document.querySelectorAll('.modal-score-input')).map(i => ({ name: i.dataset.name, score: parseFloat(i.value) || 0 }));
+        recalculateTotalScores(); updateUI(); closeModal();
+    }
+
+    function resetAllScores() {
+        if (confirm('すべての対局履歴を消去してスコアを初期化しますか？')) { history = []; recalculateTotalScores(); updateUI(); validateSum(); }
+    }
+
+    updateUI();
+</script>
+</body>
+</html>
