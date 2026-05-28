@@ -146,16 +146,41 @@
             font-size: 0.85rem;
         }
 
+        /* 入力欄とマイナス反転ボタンを横並びにするコンテナ */
+        .score-input-wrap {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+        }
+
         .player-slot input.player-score {
             text-align: right;
             padding: 6px;
             font-size: 1rem;
             background-color: var(--panel-bg);
+            flex: 1; /* 入力欄を可能な限り広げる */
+            min-width: 0;
         }
         
         .player-slot input.player-score:focus {
             outline: 2px solid var(--primary-color);
-            background-color: var(--panel-bg);
+        }
+
+        /* iPhone用のプラスマイナス切り替えボタン */
+        .toggle-minus-btn {
+            padding: 0 8px;
+            font-size: 0.85rem;
+            background-color: #64748b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-minus-btn:active {
+            opacity: 0.8;
         }
 
         .sum-check { font-size: 1rem; }
@@ -205,7 +230,6 @@
     </div>
 </header>
 
-<!-- メイン入力卓 -->
 <div class="panel">
     <div class="panel-title">
         <span>対局スコア入力</span>
@@ -215,36 +239,45 @@
         <div class="player-slot slot-east">
             <div class="player-slot-header">東家</div>
             <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
-            <!-- inputmode="decimal" でスマホの数字キーボード（点・マイナス付き）を呼び出す -->
-            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+            <div class="score-input-wrap">
+                <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+                <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
+            </div>
         </div>
         <div class="player-slot slot-south">
             <div class="player-slot-header">南家</div>
             <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
-            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+            <div class="score-input-wrap">
+                <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+                <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
+            </div>
         </div>
         <div class="slot-center">🀄</div>
         <div class="player-slot slot-north">
             <div class="player-slot-header">北家</div>
             <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
-            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+            <div class="score-input-wrap">
+                <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+                <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
+            </div>
         </div>
         <div class="player-slot slot-west">
             <div class="player-slot-header">西家</div>
             <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
-            <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+            <div class="score-input-wrap">
+                <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
+                <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
+            </div>
         </div>
     </div>
     <button onclick="submitScores()" style="width: 100%; padding: 12px;">このスコアを登録</button>
 </div>
 
-<!-- スコア履歴パネル -->
 <div class="panel">
     <div class="panel-title">対局スコア履歴</div>
     <div class="history-list" id="history-container"></div>
 </div>
 
-<!-- 名簿管理 & 通算成績パネル -->
 <div class="panel">
     <div class="panel-title" style="margin-bottom: 12px;">個人通算スコア（名簿）</div>
     
@@ -263,7 +296,6 @@
     </table>
 </div>
 
-<!-- 履歴修正モーダル -->
 <div class="modal" id="edit-modal">
     <div class="modal-content">
         <div class="panel-title"><span>履歴スコアの修正</span></div>
@@ -365,7 +397,6 @@
         }
     }
 
-    // スマホの標準キーボードで変な文字が入らないようにガード
     function cleanInput(el) {
         let val = el.value.replace(/[^0-9.-]/g, '');
         if (val.lastIndexOf('-') > 0) {
@@ -376,6 +407,22 @@
             val = val.substring(0, idx + 1) + val.substring(idx + 1).replace(/\./g, '');
         }
         el.value = val;
+    }
+
+    // iPhone用の符号反転ロジック
+    function toggleMinus(btnEl) {
+        // 同じ枠内にあるinput要素を探す
+        const inputEl = btnEl.parentElement.querySelector('.player-score');
+        let val = inputEl.value;
+        
+        if (val.startsWith('-')) {
+            inputEl.value = val.slice(1);
+        } else if (val !== '') {
+            inputEl.value = '-' + val;
+        } else {
+            inputEl.value = '-';
+        }
+        validateSum();
     }
 
     function validateSum() {
