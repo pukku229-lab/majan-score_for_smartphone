@@ -219,6 +219,41 @@
         }
         .modal-content { background-color: var(--panel-bg); padding: 16px; border-radius: 12px; width: 100%; max-width: 360px; border: 2px solid var(--primary-color); }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+        button.toggle-btn { padding: 5px 9px; font-size: 0.8rem; background: transparent; color: var(--text-color); border: 1px solid var(--border-color); }
+        button.toggle-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .player-select { width: 100%; padding: 5px; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .large-modal .modal-content { max-width: 94vw; width: 94vw; height: 84vh; display: flex; flex-direction: column; }
+        .directory-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; margin-top: 12px; overflow-y: auto; flex: 1; min-height: 0; }
+        .directory-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; padding: 8px 0 8px 8px; border-bottom: 1px solid var(--border-color); }
+        .directory-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .directory-actions { display: flex; gap: 3px; flex-shrink: 0; white-space: nowrap; }
+        .directory-actions button { padding: 3px 5px; font-size: 0.75rem; }
+        .directory-toggle { min-width: 52px; }
+        .directory-toggle.active { background: var(--primary-color); color: white; }
+        .directory-toggle:not(.active) { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
+
+        .rate-modal .modal-content { max-width: 94vw; width: 94vw; height: 84vh; display: flex; flex-direction: column; }
+        .rate-selector { display: flex; gap: 6px; margin: 12px 0 8px; }
+        .rate-selector button { flex: 1; padding: 6px; font-size: 0.85rem; }
+        .rate-summary { color: var(--primary-color); margin-bottom: 8px; }
+        .rate-results { overflow-y: auto; flex: 1; min-height: 0; border-top: 1px solid var(--border-color); }
+        .rate-row { display: flex; justify-content: space-between; padding: 10px 2px; border-bottom: 1px solid var(--border-color); }
+
+        .seat-picker-modal .modal-content { max-width: 94vw; width: 94vw; max-height: 82vh; overflow-y: auto; }
+        .seat-picker-summary { color: var(--primary-color); margin-top: 10px; }
+        .seat-picker-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; max-height: 28vh; overflow-y: auto; }
+        .seat-picker-choice { text-align: left; padding: 10px; background: transparent; color: var(--text-color); border-bottom: 1px solid var(--border-color); border-radius: 0; }
+        .seat-picker-choice.selected { background: var(--primary-color); color: white; border-radius: 6px; }
+        .seat-picker-choice:disabled { opacity: 0.35; }
+        .seat-assignment { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color); }
+        .seat-assignment-list { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 58px); gap: 5px; margin-top: 8px; }
+        .seat-assignment-button { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; padding: 5px; background: var(--primary-light); color: var(--text-color); border: 1px solid var(--border-color); font-size: 0.8rem; }
+        .seat-assignment-button.swap-selected { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .seat-east { grid-column: 2; grid-row: 1; } .seat-south { grid-column: 1; grid-row: 2; } .seat-north { grid-column: 3; grid-row: 2; } .seat-west { grid-column: 2; grid-row: 3; }
+        .seat-center { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: center; opacity: 0.4; font-size: 1.25rem; }
+        .seat-label { color: var(--primary-color); font-size: 0.7rem; } .swap-selected .seat-label { color: white; }
     </style>
 </head>
 <body>
@@ -230,7 +265,7 @@
     </div>
 </header>
 
-<div class="panel">
+<div class="panel" id="table-1">
     <div class="panel-title">
         <span>対局スコア入力</span>
         <span class="sum-check" id="table-status">合計: 0</span>
@@ -238,7 +273,7 @@
     <div class="grid-diamond">
         <div class="player-slot slot-east">
             <div class="player-slot-header">東家</div>
-            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <button type="button" class="player-select" value="" onclick="openTablePicker()">選択</button>
             <div class="score-input-wrap">
                 <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
                 <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
@@ -246,7 +281,7 @@
         </div>
         <div class="player-slot slot-south">
             <div class="player-slot-header">南家</div>
-            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <button type="button" class="player-select" value="" onclick="openTablePicker()">選択</button>
             <div class="score-input-wrap">
                 <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
                 <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
@@ -255,7 +290,7 @@
         <div class="slot-center">🀄</div>
         <div class="player-slot slot-north">
             <div class="player-slot-header">北家</div>
-            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <button type="button" class="player-select" value="" onclick="openTablePicker()">選択</button>
             <div class="score-input-wrap">
                 <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
                 <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
@@ -263,7 +298,7 @@
         </div>
         <div class="player-slot slot-west">
             <div class="player-slot-header">西家</div>
-            <select class="player-select" onchange="validateSum()"><option value="">選択</option></select>
+            <button type="button" class="player-select" value="" onclick="openTablePicker()">選択</button>
             <div class="score-input-wrap">
                 <input type="text" inputmode="decimal" class="player-score" placeholder="0.0" oninput="cleanInput(this); validateSum()">
                 <button class="toggle-minus-btn" onclick="toggleMinus(this)">+/-</button>
@@ -284,16 +319,72 @@
     <div style="display: flex; gap: 8px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed var(--border-color);">
         <input type="text" id="new-player-name" placeholder="新しい参加者の名前">
         <button onclick="addPlayer()" style="flex-shrink: 0;">新規登録</button>
+        <button class="secondary" onclick="openPlayerDirectory()" style="flex-shrink: 0;">一覧</button>
     </div>
 
     <div style="display: flex; gap: 6px; margin-bottom: 10px;">
         <button id="sort-name-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setSortOrder('name')">名前順</button>
         <button id="sort-score-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setSortOrder('score')">スコア順</button>
+        <button style="padding: 4px 8px; font-size: 0.8rem;" onclick="openRateModal()">計算</button>
         <button class="secondary" style="padding: 4px 8px; font-size: 0.8rem; margin-left: auto;" onclick="resetAllScores()">全リセット</button>
     </div>
     <table class="score-table">
         <tbody id="score-table-body"></tbody>
     </table>
+</div>
+
+<div class="modal large-modal" id="directory-modal">
+    <div class="modal-content">
+        <div class="panel-title"><span>参加者一覧</span></div>
+        <div style="font-size:0.85rem; color:var(--text-muted);">ON/OFFで今回の参加者を切り替えられます。削除しても対局履歴は残ります。</div>
+        <div id="directory-list" class="directory-list"></div>
+        <div class="modal-buttons"><button class="secondary" onclick="closePlayerDirectory()">閉じる</button></div>
+    </div>
+</div>
+
+<div class="modal rate-modal" id="rate-modal">
+    <div class="modal-content">
+        <div class="panel-title"><span>レート計算</span></div>
+        <div style="font-size:0.85rem; color:var(--text-muted);">通算スコアを選択したレートで円換算します。</div>
+        <div class="rate-selector">
+            <button id="rate-05-btn" onclick="setRate(0.5)">0.5</button>
+            <button id="rate-10-btn" class="secondary" onclick="setRate(1.0)">1.0</button>
+            <button class="secondary" onclick="openCustomRateModal()">直接入力</button>
+        </div>
+        <div class="rate-summary" id="rate-summary"></div>
+        <div class="rate-results" id="rate-results"></div>
+        <div class="modal-buttons"><button class="secondary" onclick="closeRateModal()">閉じる</button></div>
+    </div>
+</div>
+
+<div class="modal" id="custom-rate-modal">
+    <div class="modal-content">
+        <div class="panel-title"><span>レートを直接入力</span></div>
+        <input type="number" id="custom-rate-input" min="0.1" step="0.1" inputmode="decimal" placeholder="例: 0.3">
+        <div class="modal-buttons">
+            <button class="secondary" onclick="closeCustomRateModal()">戻る</button>
+            <button onclick="applyCustomRate()">決定</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal seat-picker-modal" id="seat-picker-modal">
+    <div class="modal-content">
+        <div class="panel-title"><span id="seat-picker-title">卓の参加者を選択</span></div>
+        <div style="font-size:0.85rem; color:var(--text-muted);">4人を選ぶと、選択した順に東・南・西・北へ配置します。</div>
+        <div class="seat-picker-summary" id="seat-picker-summary"></div>
+        <div class="seat-picker-list" id="seat-picker-list"></div>
+        <div class="seat-assignment" id="seat-assignment" hidden>
+            <div style="font-size:0.85rem; color:var(--text-muted);">入れ替えたい2人を順に押してください。</div>
+            <div class="seat-assignment-list" id="seat-assignment-list"></div>
+        </div>
+        <div class="modal-buttons">
+            <button class="secondary" id="seat-swap-btn" onclick="showSeatAssignment()" disabled>入れ替え</button>
+            <button class="secondary" onclick="clearTablePicker()">選択解除</button>
+            <button class="secondary" onclick="closeTablePicker()">閉じる</button>
+            <button id="seat-apply-btn" onclick="applyTablePicker()" disabled>決定</button>
+        </div>
+    </div>
 </div>
 
 <div class="modal" id="edit-modal">
@@ -315,6 +406,11 @@
     let currentTheme = localStorage.getItem('mj_theme') || 'light';
     let currentSort = 'score';
     let editingHistoryId = null;
+    let playerDirectory = JSON.parse(localStorage.getItem('mj_player_directory')) || [];
+    let hiddenPlayerDirectory = JSON.parse(localStorage.getItem('mj_hidden_player_directory')) || [];
+    let currentRate = 0.5;
+    let selectedTablePlayers = [];
+    let pendingSeatSwapIndex = null;
 
     document.documentElement.setAttribute('data-theme', currentTheme);
     document.getElementById('theme-toggle').textContent = currentTheme === 'light' ? '☀️' : '🌙';
@@ -323,6 +419,19 @@
         localStorage.setItem('mj_players', JSON.stringify(players));
         localStorage.setItem('mj_history', JSON.stringify(history));
         localStorage.setItem('mj_theme', currentTheme);
+        localStorage.setItem('mj_player_directory', JSON.stringify(playerDirectory));
+        localStorage.setItem('mj_hidden_player_directory', JSON.stringify(hiddenPlayerDirectory));
+    }
+
+    function syncPlayerDirectory() {
+        const hidden = new Set(hiddenPlayerDirectory);
+        const names = new Set(playerDirectory);
+        Object.keys(players).forEach(name => names.add(name));
+        history.forEach(record => record.match.forEach(player => {
+            if (player.name) names.add(player.name);
+        }));
+        playerDirectory = Array.from(names).sort((a, b) => a.localeCompare(b, 'ja'));
+        hiddenPlayerDirectory = hiddenPlayerDirectory.filter(name => !playerDirectory.includes(name));
     }
 
     function toggleTheme() {
@@ -360,9 +469,10 @@
             tbody.appendChild(tr);
         });
 
-        document.querySelectorAll('.player-select').forEach(select => {
-            const current = select.value;
-            select.innerHTML = '<option value="">選択</option>' + Object.keys(players).sort((a,b)=>a.localeCompare(b,'ja')).map(n=>`<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
+        document.querySelectorAll('.player-select').forEach(button => {
+            if (players[button.value] === undefined) button.value = '';
+            button.textContent = button.value || '選択';
+            button.title = button.value || '参加者を選択';
         });
 
         const historyContainer = document.getElementById('history-container');
@@ -378,7 +488,9 @@
         const input = document.getElementById('new-player-name');
         const name = input.value.trim();
         if (name && players[name] === undefined) {
-            players[name] = 0; input.value = ''; saveData(); updateUI();
+            hiddenPlayerDirectory = hiddenPlayerDirectory.filter(player => player !== name);
+            if (!playerDirectory.includes(name)) playerDirectory.push(name);
+            players[name] = 0; input.value = ''; syncPlayerDirectory(); saveData(); updateUI();
         }
     }
 
@@ -387,14 +499,206 @@
         if (newName && newName.trim() !== oldName && players[newName.trim()] === undefined) {
             players[newName.trim()] = players[oldName]; delete players[oldName];
             history.forEach(r => r.match.forEach(p => { if (p.name === oldName) p.name = newName.trim(); }));
-            saveData(); updateUI();
+            playerDirectory = playerDirectory.map(name => name === oldName ? newName.trim() : name);
+            hiddenPlayerDirectory = hiddenPlayerDirectory.map(name => name === oldName ? newName.trim() : name);
+            document.querySelectorAll('.player-select').forEach(button => { if (button.value === oldName) button.value = newName.trim(); });
+            syncPlayerDirectory(); saveData(); updateUI();
         }
     }
 
     function removePlayer(name) {
         if (confirm(name + ' さんを削除しますか？')) {
-            delete players[name]; recalculateTotalScores(); updateUI();
+            hiddenPlayerDirectory = Array.from(new Set([...hiddenPlayerDirectory, name]));
+            delete players[name]; recalculateTotalScores(); syncPlayerDirectory(); updateUI();
         }
+    }
+
+    function openPlayerDirectory() {
+        syncPlayerDirectory();
+        renderPlayerDirectory();
+        document.getElementById('directory-modal').style.display = 'flex';
+    }
+
+    function closePlayerDirectory() {
+        document.getElementById('directory-modal').style.display = 'none';
+    }
+
+    function renderPlayerDirectory() {
+        const list = document.getElementById('directory-list');
+        list.innerHTML = '';
+        playerDirectory.forEach(name => {
+            const isRegistered = players[name] !== undefined;
+            const row = document.createElement('div');
+            row.className = 'directory-row';
+            const nameLabel = document.createElement('span');
+            nameLabel.className = 'directory-name';
+            nameLabel.textContent = name;
+            const actions = document.createElement('div');
+            actions.className = 'directory-actions';
+            const toggle = document.createElement('button');
+            toggle.className = 'directory-toggle' + (isRegistered ? ' active' : '');
+            toggle.textContent = isRegistered ? '✓ ON' : 'OFF';
+            toggle.onclick = () => toggleDirectoryPlayer(name);
+            const edit = document.createElement('button');
+            edit.className = 'secondary'; edit.textContent = '変更';
+            edit.onclick = () => editDirectoryPlayer(name);
+            const remove = document.createElement('button');
+            remove.className = 'danger'; remove.textContent = '削除';
+            remove.onclick = () => removeDirectoryPlayer(name);
+            actions.append(toggle, edit, remove);
+            row.append(nameLabel, actions);
+            list.appendChild(row);
+        });
+    }
+
+    function toggleDirectoryPlayer(name) {
+        if (players[name] === undefined) {
+            hiddenPlayerDirectory = hiddenPlayerDirectory.filter(player => player !== name);
+            players[name] = 0;
+        } else {
+            delete players[name];
+            hiddenPlayerDirectory = Array.from(new Set([...hiddenPlayerDirectory, name]));
+            recalculateTotalScores();
+        }
+        saveData(); updateUI(); renderPlayerDirectory();
+    }
+
+    function editDirectoryPlayer(oldName) {
+        const newName = prompt('「' + oldName + '」さんの新しい名前を入力:', oldName);
+        const trimmed = newName && newName.trim();
+        if (!trimmed || trimmed === oldName) return;
+        if (playerDirectory.includes(trimmed) || players[trimmed] !== undefined) { alert('同じ名前が登録されています'); return; }
+        if (players[oldName] !== undefined) { players[trimmed] = players[oldName]; delete players[oldName]; }
+        history.forEach(record => record.match.forEach(player => { if (player.name === oldName) player.name = trimmed; }));
+        playerDirectory = playerDirectory.map(name => name === oldName ? trimmed : name);
+        hiddenPlayerDirectory = hiddenPlayerDirectory.map(name => name === oldName ? trimmed : name);
+        document.querySelectorAll('.player-select').forEach(button => { if (button.value === oldName) button.value = trimmed; });
+        syncPlayerDirectory(); saveData(); updateUI(); renderPlayerDirectory();
+    }
+
+    function removeDirectoryPlayer(name) {
+        if (!confirm('「' + name + '」さんを今回の参加者から外しますか？\n対局履歴は残ります。')) return;
+        if (players[name] !== undefined) delete players[name];
+        hiddenPlayerDirectory = Array.from(new Set([...hiddenPlayerDirectory, name]));
+        recalculateTotalScores(); saveData(); updateUI(); renderPlayerDirectory();
+    }
+
+    function openRateModal() {
+        currentSort = 'score'; updateUI();
+        renderRateResults();
+        document.getElementById('rate-modal').style.display = 'flex';
+    }
+
+    function closeRateModal() { document.getElementById('rate-modal').style.display = 'none'; }
+
+    function setRate(rate) {
+        currentRate = rate;
+        renderRateResults();
+    }
+
+    function renderRateResults() {
+        document.getElementById('rate-summary').textContent = '現在：' + currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
+        document.getElementById('rate-05-btn').className = currentRate === 0.5 ? '' : 'secondary';
+        document.getElementById('rate-10-btn').className = currentRate === 1 ? '' : 'secondary';
+        const results = document.getElementById('rate-results');
+        results.innerHTML = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
+            const amount = Math.round(score * currentRate * 100);
+            return '<div class="rate-row"><strong>' + name + '</strong><strong class="' + (amount > 0 ? 'text-success' : (amount < 0 ? 'text-danger' : '')) + '">' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円</strong></div>';
+        }).join('') || '<div style="padding:12px; text-align:center; color:var(--text-muted);">参加者がいません</div>';
+    }
+
+    function openCustomRateModal() {
+        document.getElementById('custom-rate-input').value = currentRate;
+        document.getElementById('custom-rate-modal').style.display = 'flex';
+    }
+
+    function closeCustomRateModal() { document.getElementById('custom-rate-modal').style.display = 'none'; }
+
+    function applyCustomRate() {
+        const rate = parseFloat(document.getElementById('custom-rate-input').value);
+        if (!Number.isFinite(rate) || rate <= 0) { alert('0より大きいレートを入力してください'); return; }
+        currentRate = rate; closeCustomRateModal(); renderRateResults();
+    }
+
+    function tableSeatButtons() {
+        return ['slot-east', 'slot-south', 'slot-west', 'slot-north'].map(slot => document.querySelector('.' + slot + ' .player-select'));
+    }
+
+    function openTablePicker() {
+        selectedTablePlayers = tableSeatButtons().map(button => button.value).filter(Boolean);
+        selectedTablePlayers = [...new Set(selectedTablePlayers)];
+        pendingSeatSwapIndex = null;
+        document.getElementById('seat-assignment').hidden = true;
+        renderTablePicker();
+        document.getElementById('seat-picker-modal').style.display = 'flex';
+    }
+
+    function closeTablePicker() { document.getElementById('seat-picker-modal').style.display = 'none'; }
+
+    function renderTablePicker() {
+        const names = Object.keys(players).sort((a, b) => a.localeCompare(b, 'ja'));
+        document.getElementById('seat-picker-summary').textContent = '選択中：' + selectedTablePlayers.length + ' / 4人';
+        const list = document.getElementById('seat-picker-list');
+        list.innerHTML = '';
+        names.forEach(name => {
+            const selected = selectedTablePlayers.includes(name);
+            const choice = document.createElement('button');
+            choice.className = 'seat-picker-choice' + (selected ? ' selected' : '');
+            choice.textContent = (selected ? '✓ ' : '') + name;
+            choice.disabled = !selected && selectedTablePlayers.length >= 4;
+            choice.onclick = () => {
+                selectedTablePlayers = selected ? selectedTablePlayers.filter(player => player !== name) : [...selectedTablePlayers, name];
+                pendingSeatSwapIndex = null;
+                document.getElementById('seat-assignment').hidden = true;
+                renderTablePicker();
+            };
+            list.appendChild(choice);
+        });
+        const full = selectedTablePlayers.length === 4;
+        document.getElementById('seat-apply-btn').disabled = !full;
+        document.getElementById('seat-swap-btn').disabled = !full;
+        if (!document.getElementById('seat-assignment').hidden) renderSeatAssignment();
+    }
+
+    function clearTablePicker() {
+        selectedTablePlayers = [];
+        pendingSeatSwapIndex = null;
+        document.getElementById('seat-assignment').hidden = true;
+        renderTablePicker();
+    }
+
+    function showSeatAssignment() {
+        if (selectedTablePlayers.length !== 4) return;
+        pendingSeatSwapIndex = null;
+        document.getElementById('seat-assignment').hidden = false;
+        renderSeatAssignment();
+    }
+
+    function renderSeatAssignment() {
+        const layout = [['seat-east', '東家', 0], ['seat-south', '南家', 1], ['seat-north', '北家', 3], ['seat-west', '西家', 2]];
+        const list = document.getElementById('seat-assignment-list');
+        list.innerHTML = '<div class="seat-center">🀄</div>';
+        layout.forEach(([className, label, index]) => {
+            const button = document.createElement('button');
+            button.className = 'seat-assignment-button ' + className + (pendingSeatSwapIndex === index ? ' swap-selected' : '');
+            button.innerHTML = '<span class="seat-label">' + label + '</span><strong>' + selectedTablePlayers[index] + '</strong>';
+            button.onclick = () => {
+                if (pendingSeatSwapIndex === null) pendingSeatSwapIndex = index;
+                else if (pendingSeatSwapIndex === index) pendingSeatSwapIndex = null;
+                else {
+                    [selectedTablePlayers[pendingSeatSwapIndex], selectedTablePlayers[index]] = [selectedTablePlayers[index], selectedTablePlayers[pendingSeatSwapIndex]];
+                    pendingSeatSwapIndex = null;
+                }
+                renderSeatAssignment();
+            };
+            list.appendChild(button);
+        });
+    }
+
+    function applyTablePicker() {
+        if (selectedTablePlayers.length !== 4) return;
+        tableSeatButtons().forEach((button, index) => button.value = selectedTablePlayers[index]);
+        closeTablePicker(); updateUI(); validateSum();
     }
 
     function cleanInput(el) {
@@ -446,6 +750,7 @@
             if (!name || isNaN(score)) hasError = true;
             currentMatch.push({ name, score }); sum += score || 0;
         });
+        if (new Set(currentMatch.map(player => player.name)).size !== currentMatch.length) { alert('同じ参加者を重複して選択しています'); return; }
         if (hasError || Math.round(sum * 10) / 10 !== 0) { alert('入力不備があるか、合計が0ではありません'); return; }
         
         history.push({ id: Date.now(), match: currentMatch });
@@ -488,7 +793,10 @@
         if (confirm('すべての対局履歴を消去してスコアを初期化しますか？')) { history = []; recalculateTotalScores(); updateUI(); validateSum(); }
     }
 
+    syncPlayerDirectory();
+    saveData();
     updateUI();
 </script>
 </body>
 </html>
+
