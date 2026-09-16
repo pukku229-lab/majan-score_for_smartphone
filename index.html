@@ -408,6 +408,7 @@
     let editingHistoryId = null;
     let playerDirectory = JSON.parse(localStorage.getItem('mj_player_directory')) || [];
     let hiddenPlayerDirectory = JSON.parse(localStorage.getItem('mj_hidden_player_directory')) || [];
+    let deletedPlayerDirectory = JSON.parse(localStorage.getItem('mj_deleted_player_directory')) || [];
     let currentRate = 0.5;
     let selectedTablePlayers = [];
     let pendingSeatSwapIndex = null;
@@ -421,17 +422,19 @@
         localStorage.setItem('mj_theme', currentTheme);
         localStorage.setItem('mj_player_directory', JSON.stringify(playerDirectory));
         localStorage.setItem('mj_hidden_player_directory', JSON.stringify(hiddenPlayerDirectory));
+        localStorage.setItem('mj_deleted_player_directory', JSON.stringify(deletedPlayerDirectory));
     }
 
     function syncPlayerDirectory() {
-        const hidden = new Set(hiddenPlayerDirectory);
-        const names = new Set(playerDirectory);
-        Object.keys(players).forEach(name => names.add(name));
+        const deleted = new Set(deletedPlayerDirectory);
+        const names = new Set(playerDirectory.filter(name => !deleted.has(name)));
+        Object.keys(players).forEach(name => { if (!deleted.has(name)) names.add(name); });
         history.forEach(record => record.match.forEach(player => {
-            if (player.name) names.add(player.name);
+            if (player.name && !deleted.has(player.name)) names.add(player.name);
         }));
         playerDirectory = Array.from(names).sort((a, b) => a.localeCompare(b, 'ja'));
-        hiddenPlayerDirectory = hiddenPlayerDirectory.filter(name => !playerDirectory.includes(name));
+        hiddenPlayerDirectory = Array.from(new Set(hiddenPlayerDirectory.filter(name => playerDirectory.includes(name))));
+        deletedPlayerDirectory = Array.from(new Set(deletedPlayerDirectory));
     }
 
     function toggleTheme() {
@@ -489,6 +492,7 @@
         const name = input.value.trim();
         if (name && players[name] === undefined) {
             hiddenPlayerDirectory = hiddenPlayerDirectory.filter(player => player !== name);
+            deletedPlayerDirectory = deletedPlayerDirectory.filter(player => player !== name);
             if (!playerDirectory.includes(name)) playerDirectory.push(name);
             players[name] = 0; input.value = ''; syncPlayerDirectory(); saveData(); updateUI();
         }
@@ -577,10 +581,12 @@
     }
 
     function removeDirectoryPlayer(name) {
-        if (!confirm('「' + name + '」さんを今回の参加者から外しますか？\n対局履歴は残ります。')) return;
+        if (!confirm('「' + name + '」さんを名簿から削除しますか？\n対局履歴は残ります。')) return;
         if (players[name] !== undefined) delete players[name];
-        hiddenPlayerDirectory = Array.from(new Set([...hiddenPlayerDirectory, name]));
-        recalculateTotalScores(); saveData(); updateUI(); renderPlayerDirectory();
+        playerDirectory = playerDirectory.filter(player => player !== name);
+        hiddenPlayerDirectory = hiddenPlayerDirectory.filter(player => player !== name);
+        deletedPlayerDirectory = Array.from(new Set([...deletedPlayerDirectory, name]));
+        recalculateTotalScores(); syncPlayerDirectory(); saveData(); updateUI(); renderPlayerDirectory();
     }
 
     function openRateModal() {
