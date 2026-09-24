@@ -248,8 +248,10 @@
         button.toggle-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
         .player-select { width: 100%; padding: 5px; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .large-modal .modal-content { max-width: 94vw; width: 94vw; height: 84vh; display: flex; flex-direction: column; }
-        .directory-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; margin-top: 12px; overflow-y: auto; flex: 1; min-height: 0; }
+        body.modal-open { overflow: hidden; overscroll-behavior: none; }
+
+        .large-modal .modal-content { max-width: 94vw; width: 94vw; height: 84dvh; display: flex; flex-direction: column; }
+        .directory-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; margin-top: 12px; overflow-y: auto; flex: 1; min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .directory-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; padding: 8px 0 8px 8px; border-bottom: 1px solid var(--border-color); }
         .directory-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .directory-actions { display: flex; gap: 3px; flex-shrink: 0; white-space: nowrap; }
@@ -259,7 +261,8 @@
         .directory-toggle:not(.active) { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
 
         @media (max-width: 480px) {
-            .directory-list { grid-template-columns: 1fr; gap: 0; }
+            .large-modal .modal-content { height: auto; max-height: 84dvh; }
+            .directory-list { grid-template-columns: 1fr; gap: 0; height: min(440px, calc(84dvh - 175px)); flex: none; align-content: start; }
             .directory-row { padding-left: 12px; }
         }
 
@@ -551,11 +554,13 @@
     function openPlayerDirectory() {
         syncPlayerDirectory();
         renderPlayerDirectory();
+        document.body.classList.add('modal-open');
         document.getElementById('directory-modal').style.display = 'flex';
     }
 
     function closePlayerDirectory() {
         document.getElementById('directory-modal').style.display = 'none';
+        document.body.classList.remove('modal-open');
     }
 
     function renderPlayerDirectory() {
