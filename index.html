@@ -657,7 +657,7 @@
             const amount = Math.round(score * currentRate * 100);
             return name + ': ' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円';
         });
-        const text = [date, 'レート: ' + rateLabel, ...resultLines].join('\n');
+        const text = [date, 'レート: ' + rateLabel, resultLines.join('\n')].join('\n\n');
 
         if (navigator.share) {
             navigator.share({ title: '麻雀結果', text }).catch(error => {
