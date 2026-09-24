@@ -676,14 +676,15 @@
         const rateLabel = currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
         const results = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
             const amount = Math.round(score * currentRate * 100);
-            return { name, amount, amountText: (amount > 0 ? '+' : '') + amount.toLocaleString() + '円' };
+            const scoreText = score > 0 ? '+' + score.toFixed(1) : score.toFixed(1);
+            return { name, score, scoreText, amount, amountText: (amount > 0 ? '+' : '') + amount.toLocaleString() + '円' };
         });
         return { date, rateLabel, results };
     }
 
     function getRateShareText() {
         const data = getRateShareData();
-        const resultLines = data.results.map(result => result.name + ': ' + result.amountText);
+        const resultLines = data.results.map(result => result.name + ': ' + result.scoreText + ' / ' + result.amountText);
         return [data.date, 'レート: ' + data.rateLabel, resultLines.join('\n')].join('\n\n');
     }
 
@@ -710,7 +711,7 @@
         const data = getRateShareData();
         const width = 1080;
         const rowHeight = 92;
-        const height = 250 + Math.max(data.results.length, 1) * rowHeight + 54;
+        const height = 270 + Math.max(data.results.length, 1) * rowHeight + 54;
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -734,7 +735,15 @@
         context.fillStyle = '#38bdf8';
         context.fillText('レート: ' + data.rateLabel, 88, 194);
 
-        let y = 250;
+        context.font = '700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        context.fillStyle = '#94a3b8';
+        context.textAlign = 'left';
+        context.fillText('名前', 64, 246);
+        context.textAlign = 'right';
+        context.fillText('スコア', 720, 246);
+        context.fillText('金額', width - 64, 246);
+
+        let y = 270;
         data.results.forEach(result => {
             context.strokeStyle = '#334155';
             context.lineWidth = 2;
@@ -746,9 +755,14 @@
             context.textAlign = 'left';
             context.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
             context.fillStyle = '#f8fafc';
-            context.fillText(result.name, 64, y + 58, 540);
+            context.fillText(result.name, 64, y + 58, 400);
 
             context.textAlign = 'right';
+            context.font = '700 32px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            context.fillStyle = result.score > 0 ? '#38bdf8' : (result.score < 0 ? '#f87171' : '#f8fafc');
+            context.fillText(result.scoreText, 720, y + 56);
+
+            context.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
             context.fillStyle = result.amount > 0 ? '#38bdf8' : (result.amount < 0 ? '#f87171' : '#f8fafc');
             context.fillText(result.amountText, width - 64, y + 58);
             y += rowHeight;
@@ -756,7 +770,7 @@
         return { canvas, date: data.date };
     }
 
-    async function shareRateImage() {
+        async function shareRateImage() {
         closeShareChoiceModal();
         const { canvas, date } = createRateShareImage();
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
