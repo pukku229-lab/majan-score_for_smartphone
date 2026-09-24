@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>麻雀スコアマネージャー</title>
+    <script>
+        (async () => {
+            try {
+                const response = await fetch('./version.json?ts=' + Date.now(), { cache: 'no-store' });
+                if (!response.ok) return;
+                const { version } = await response.json();
+                if (!version) return;
+                const key = 'mj_app_version';
+                const previousVersion = localStorage.getItem(key);
+                if (previousVersion && previousVersion !== version) {
+                    localStorage.setItem(key, version);
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.get('v') !== version) {
+                        url.searchParams.set('v', version);
+                        window.location.replace(url.toString());
+                        return;
+                    }
+                }
+                localStorage.setItem(key, version);
+            } catch (_) {
+                // オフライン中は現在の版をそのまま利用します。
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg-color: #f8fafc;
