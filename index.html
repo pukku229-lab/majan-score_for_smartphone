@@ -654,7 +654,15 @@
     function renderRateResults() {
         document.getElementById('rate-summary').textContent = '現在：' + currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
         document.getElementById('rate-05-btn').className = currentRate === 0.5 ? '' : 'secondary';
-        document.getElementById('rate-10-btn').className = currentRate === 1 ? '' : 'seconfunction openShareChoiceModal() {
+        document.getElementById('rate-10-btn').className = currentRate === 1 ? '' : 'secondary';
+        const results = document.getElementById('rate-results');
+        results.innerHTML = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
+            const amount = Math.round(score * currentRate * 100);
+            return '<div class="rate-row"><strong>' + name + '</strong><strong class="' + (amount > 0 ? 'text-success' : (amount < 0 ? 'text-danger' : '')) + '">' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円</strong></div>';
+        }).join('') || '<div style="padding:12px; text-align:center; color:var(--text-muted);">参加者がいません</div>';
+    }
+
+    function openShareChoiceModal() {
         document.getElementById('share-choice-modal').style.display = 'flex';
     }
 
@@ -774,26 +782,7 @@
         alert('画像共有に対応していないため、画像を保存しました。');
     }
 
-    );
-            return name + ': ' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円';
-        });
-        const text = [date, 'レート: ' + rateLabel, resultLines.join('\n')].join('\n\n');
-
-        if (navigator.share) {
-            navigator.share({ title: '麻雀結果', text }).catch(error => {
-                if (error.name !== 'AbortError') alert('共有を開けませんでした。');
-            });
-            return;
-        }
-
-        navigator.clipboard?.writeText(text).then(() => {
-            alert('共有に対応していないため、結果をコピーしました。');
-        }).catch(() => {
-            alert('この端末では共有に対応していません。');
-        });
-    }
-
-    function openCustomRateModal() {
+        function openCustomRateModal() {
         document.getElementById('custom-rate-input').value = currentRate;
         document.getElementById('custom-rate-modal').style.display = 'flex';
     }
