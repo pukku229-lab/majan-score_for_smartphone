@@ -387,7 +387,20 @@
         </div>
         <div class="rate-summary" id="rate-summary"></div>
         <div class="rate-results" id="rate-results"></div>
-        <div class="modal-buttons"><button onclick="shareRateResults()">LINEで共有</button><button class="secondary" onclick="closeRateModal()">閉じる</button></div>
+        <div class="modal-buttons"><button onclick="openShareChoiceModal()">共有</button><button class="secondary" onclick="closeRateModal()">閉じる</button></div>
+    </div>
+</div>
+
+
+<div class="modal" id="share-choice-modal" style="z-index:1100;">
+    <div class="modal-content">
+        <div class="panel-title"><span>結果を共有</span></div>
+        <div style="font-size:0.85rem; color:var(--text-muted);">共有する形式を選択してください。</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px;">
+            <button onclick="shareRateText()">テキスト</button>
+            <button onclick="shareRateImage()">画像</button>
+        </div>
+        <div class="modal-buttons"><button class="secondary" onclick="closeShareChoiceModal()">戻る</button></div>
     </div>
 </div>
 
@@ -641,20 +654,127 @@
     function renderRateResults() {
         document.getElementById('rate-summary').textContent = '現在：' + currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
         document.getElementById('rate-05-btn').className = currentRate === 0.5 ? '' : 'secondary';
-        document.getElementById('rate-10-btn').className = currentRate === 1 ? '' : 'secondary';
-        const results = document.getElementById('rate-results');
-        results.innerHTML = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
-            const amount = Math.round(score * currentRate * 100);
-            return '<div class="rate-row"><strong>' + name + '</strong><strong class="' + (amount > 0 ? 'text-success' : (amount < 0 ? 'text-danger' : '')) + '">' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円</strong></div>';
-        }).join('') || '<div style="padding:12px; text-align:center; color:var(--text-muted);">参加者がいません</div>';
+        document.getElementById('rate-10-btn').className = currentRate === 1 ? '' : 'seconfunction openShareChoiceModal() {
+        document.getElementById('share-choice-modal').style.display = 'flex';
     }
 
-    function shareRateResults() {
+    function closeShareChoiceModal() {
+        document.getElementById('share-choice-modal').style.display = 'none';
+    }
+
+    function getRateShareData() {
         const today = new Date();
         const date = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
         const rateLabel = currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
-        const resultLines = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
+        const results = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
             const amount = Math.round(score * currentRate * 100);
+            return { name, amount, amountText: (amount > 0 ? '+' : '') + amount.toLocaleString() + '円' };
+        });
+        return { date, rateLabel, results };
+    }
+
+    function getRateShareText() {
+        const data = getRateShareData();
+        const resultLines = data.results.map(result => result.name + ': ' + result.amountText);
+        return [data.date, 'レート: ' + data.rateLabel, resultLines.join('\n')].join('\n\n');
+    }
+
+    async function shareRateText() {
+        closeShareChoiceModal();
+        const text = getRateShareText();
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: '麻雀結果', text });
+            } catch (error) {
+                if (error.name !== 'AbortError') alert('共有を開けませんでした。');
+            }
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('共有に対応していないため、結果をコピーしました。');
+        } catch (_) {
+            alert('この端末では共有に対応していません。');
+        }
+    }
+
+    function createRateShareImage() {
+        const data = getRateShareData();
+        const width = 1080;
+        const rowHeight = 92;
+        const height = 250 + Math.max(data.results.length, 1) * rowHeight + 54;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#0f172a';
+        context.fillRect(0, 0, width, height);
+
+        context.fillStyle = '#38bdf8';
+        context.fillRect(54, 52, 10, 132);
+
+        context.textAlign = 'left';
+        context.font = '700 31px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        context.fillStyle = '#94a3b8';
+        context.fillText(data.date, 88, 84);
+
+        context.font = '700 52px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        context.fillStyle = '#f8fafc';
+        context.fillText('麻雀結果', 88, 142);
+
+        context.font = '700 32px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        context.fillStyle = '#38bdf8';
+        context.fillText('レート: ' + data.rateLabel, 88, 194);
+
+        let y = 250;
+        data.results.forEach(result => {
+            context.strokeStyle = '#334155';
+            context.lineWidth = 2;
+            context.beginPath();
+            context.moveTo(54, y);
+            context.lineTo(width - 54, y);
+            context.stroke();
+
+            context.textAlign = 'left';
+            context.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            context.fillStyle = '#f8fafc';
+            context.fillText(result.name, 64, y + 58, 540);
+
+            context.textAlign = 'right';
+            context.fillStyle = result.amount > 0 ? '#38bdf8' : (result.amount < 0 ? '#f87171' : '#f8fafc');
+            context.fillText(result.amountText, width - 64, y + 58);
+            y += rowHeight;
+        });
+        return { canvas, date: data.date };
+    }
+
+    async function shareRateImage() {
+        closeShareChoiceModal();
+        const { canvas, date } = createRateShareImage();
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) {
+            alert('画像を作成できませんでした。');
+            return;
+        }
+        const file = new File([blob], 'majan-result-' + date.replaceAll('/', '-') + '.png', { type: 'image/png' });
+        if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+            try {
+                await navigator.share({ title: '麻雀結果', files: [file] });
+            } catch (error) {
+                if (error.name !== 'AbortError') alert('画像を共有できませんでした。');
+            }
+            return;
+        }
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+        alert('画像共有に対応していないため、画像を保存しました。');
+    }
+
+    );
             return name + ': ' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円';
         });
         const text = [date, 'レート: ' + rateLabel, resultLines.join('\n')].join('\n\n');
