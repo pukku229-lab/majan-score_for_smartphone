@@ -246,6 +246,8 @@
         .seat-picker-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; max-height: 28vh; overflow-y: auto; }
         .seat-picker-choice { text-align: left; padding: 10px; background: transparent; color: var(--text-color); border-bottom: 1px solid var(--border-color); border-radius: 0; }
         .seat-picker-choice.selected { background: var(--primary-color); color: white; border-radius: 6px; }
+        [data-theme="dark"] button.seat-picker-choice { color: var(--text-color); }
+        [data-theme="dark"] button.seat-picker-choice.selected { color: white; }
         .seat-picker-choice:disabled { opacity: 0.35; }
         .seat-assignment { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color); }
         .seat-assignment-list { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 58px); gap: 5px; margin-top: 8px; }
