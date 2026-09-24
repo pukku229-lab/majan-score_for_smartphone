@@ -258,6 +258,11 @@
         .directory-toggle.active { background: var(--primary-color); color: white; }
         .directory-toggle:not(.active) { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
 
+        @media (max-width: 480px) {
+            .directory-list { grid-template-columns: 1fr; gap: 0; }
+            .directory-row { padding-left: 12px; }
+        }
+
         .rate-modal .modal-content { max-width: 94vw; width: 94vw; height: 84vh; display: flex; flex-direction: column; }
         .rate-selector { display: flex; gap: 6px; margin: 12px 0 8px; }
         .rate-selector button { flex: 1; padding: 6px; font-size: 0.85rem; }
