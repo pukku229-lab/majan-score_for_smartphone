@@ -652,12 +652,12 @@
     function shareRateResults() {
         const today = new Date();
         const date = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
-        const rateLabel = currentRate.toFixed(1) + '／×' + Math.round(currentRate * 100) + '円';
+        const rateLabel = currentRate.toFixed(1) + '（×' + Math.round(currentRate * 100) + '円）';
         const resultLines = Object.entries(players).sort((a, b) => b[1] - a[1]).map(([name, score]) => {
             const amount = Math.round(score * currentRate * 100);
-            return name + '　' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円';
+            return name + ': ' + (amount > 0 ? '+' : '') + amount.toLocaleString() + '円';
         });
-        const text = [date, '🀄 麻雀結果（' + rateLabel + '）', ...resultLines].join('\n');
+        const text = [date, 'レート: ' + rateLabel, ...resultLines].join('\n');
 
         if (navigator.share) {
             navigator.share({ title: '麻雀結果', text }).catch(error => {
